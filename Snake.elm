@@ -1,7 +1,9 @@
 -- Rosewired@mac.com
 module Snake exposing (..)
 -- the Elm architecture
-import Html
+import Html exposing (..)
+import Html.Events exposing (..)
+import Element exposing (..)
 -- html style and helper functions for HTML attributes
 --import Html.App
 -- access of direction and key codes,
@@ -11,17 +13,20 @@ import Keyboard
 import Window
 -- generate random place to put the food
 import Random
+import Text
 import Time exposing (Time)
 import Color exposing (..)
+import Collage exposing (..)
 import Html.Attributes exposing (style)
 -- Animation elements
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Char
 
 (width, height) = (500, 500)
 
 main =
-  program
+  Html.program
     { init = init
     , view = view
     , update = update
@@ -29,17 +34,22 @@ main =
     }
 
 -- model
-type alias Game =
-  { snake : Snake
-  , state : GameState
-  , food : Block
-  , eaten : Bool
-  , score : Int
-  }
+--type alias Game =
+  --{ snake : Snake
+  --, state : GameState
+  --, food : Block
+  --, eaten : Bool
+  --}
 
-type GameState = NewGame
-               | InGame
-               | Lose
+type Game
+  = NewGame
+  | InGame Snake Food Score
+
+type alias Score = Int
+
+--type GameState = NewGame
+               --| InGame
+               --| Lose
 
 type Direction = Up
                | Down
@@ -50,7 +60,7 @@ type alias Block = (Float, Float)
 
 type alias Snake =
   { head : Block
-  , body : List Block
+  , tail : List Block
   , direction : Direction
   }
 
@@ -64,60 +74,73 @@ initSnake =
   , direction = Left
   }
 
-initGame =
-  { snake = initSnake
-  , state = NewGame
-  , food = Nothing
-  , eaten = False
-  , score = Int
-  }
+--initGame =
+  --{ snake = initSnake
+  --, state = NewGame
+  --, food = Nothing
+  --, eaten = False
+  --}
 
 init : (Game, Cmd Msg)
-init = (initGame, Cmd.none)
+init = (NewGame, Cmd.none)
 
 
 -- MESSAGES
 type Msg
-  = KeyMsg Keyboard.KeyCode
+  = Tick Time
+  | KeyPress Keyboard.KeyCode
+  | Spawn (Float, Position)
+
 
 -- UPDATE
 update : Msg -> Game -> (Game, Cmd Msg)
-update msg ({snake, state, food, eaten, score} as game) =
-  case state of
+update msg game =
+  case game of
     NewGame ->
       case msg of
         -- space
         KeyPress 32 ->
-          ({initSnake, InGame, Nothing, False, 0}, Cmd.none)
+          (InGame initSnake Nothing 0, Cmd.none)
 
         _ ->
           (game, Cmd.none)
-    InGame ->
-      ({initSnake, InGame, Nothing, False, 0}, Cmd.none)
+    InGame snake food score->
+      (InGame initSnake Nothing 0, Cmd.none)
 
-    Lose ->
-      ({initSnake, NewGame, Nothing, False, 0}, Cmd.none)
+    --Lose ->
+      --(NewGame initSnake Nothing False 0, Cmd.none)
+
+txt : String -> Form
+txt msg =
+  msg
+  |> Text.fromString
+  |> Text.color white
+  |> Text.monospace
+  |> Element.centered
+  |> Collage.toForm 
 
 -- VIEW
 view : Game -> Html Msg
 view game =
-  let background = rect (toFloat width) (toFloat height) |> filled blue
-  content =
-    case game.state of
-      NewGame ->
-        [txt "press SPACE to start"]
-      InGame ->
-        [txt "You already enter the game !!!"]
+  let background = Collage.rect (toFloat width) (toFloat height) |> filled blue
+      content =
+        case game of
+          NewGame ->
+            [txt "press SPACE to start"]
+          InGame snake food score->
+            [txt "You already enter the game !!!"]
+  in collage width height (background::content)
+    |> Element.toHtml
 
 
 -- SUBSCRIPTIONS
 subscriptions : Game -> Sub Msg
 subscriptions  game =
-  case game.state of
-    InGame ->
+  case game of
+    InGame snake food score->
       Keyboard.presses KeyPress
     _ ->
       Sub.batch
-        [ Keyboard.downs KeyMsg
+        [ Keyboard.downs KeyPress
         , Time.every (Time.inMilliseconds 50) Tick
         ]

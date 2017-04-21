@@ -1,0 +1,123 @@
+var _user$project$Snake$txt = function (msg) {
+	return _evancz$elm_graphics$Collage$toForm(
+		_evancz$elm_graphics$Element$centered(
+			_evancz$elm_graphics$Text$monospace(
+				A2(
+					_evancz$elm_graphics$Text$color,
+					_elm_lang$core$Color$white,
+					_evancz$elm_graphics$Text$fromString(msg)))));
+};
+var _user$project$Snake$_p0 = {ctor: '_Tuple2', _0: 500, _1: 500};
+var _user$project$Snake$width = _user$project$Snake$_p0._0;
+var _user$project$Snake$height = _user$project$Snake$_p0._1;
+var _user$project$Snake$view = function (game) {
+	var content = function () {
+		var _p1 = game;
+		if (_p1.ctor === 'NewGame') {
+			return {
+				ctor: '::',
+				_0: _user$project$Snake$txt('press SPACE to start'),
+				_1: {ctor: '[]'}
+			};
+		} else {
+			return {
+				ctor: '::',
+				_0: _user$project$Snake$txt('You already enter the game !!!'),
+				_1: {ctor: '[]'}
+			};
+		}
+	}();
+	var background = A2(
+		_evancz$elm_graphics$Collage$filled,
+		_elm_lang$core$Color$blue,
+		A2(
+			_evancz$elm_graphics$Collage$rect,
+			_elm_lang$core$Basics$toFloat(_user$project$Snake$width),
+			_elm_lang$core$Basics$toFloat(_user$project$Snake$height)));
+	return _evancz$elm_graphics$Element$toHtml(
+		A3(
+			_evancz$elm_graphics$Collage$collage,
+			_user$project$Snake$width,
+			_user$project$Snake$height,
+			{ctor: '::', _0: background, _1: content}));
+};
+var _user$project$Snake$Snake = F3(
+	function (a, b, c) {
+		return {head: a, tail: b, direction: c};
+	});
+var _user$project$Snake$InGame = F3(
+	function (a, b, c) {
+		return {ctor: 'InGame', _0: a, _1: b, _2: c};
+	});
+var _user$project$Snake$NewGame = {ctor: 'NewGame'};
+var _user$project$Snake$init = {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _elm_lang$core$Platform_Cmd$none};
+var _user$project$Snake$Right = {ctor: 'Right'};
+var _user$project$Snake$Left = {ctor: 'Left'};
+var _user$project$Snake$initSnake = {
+	head: {ctor: '_Tuple2', _0: 28, _1: 28},
+	tail: {
+		ctor: '::',
+		_0: {ctor: '_Tuple2', _0: 29, _1: 28},
+		_1: {
+			ctor: '::',
+			_0: {ctor: '_Tuple2', _0: 30, _1: 28},
+			_1: {ctor: '[]'}
+		}
+	},
+	direction: _user$project$Snake$Left
+};
+var _user$project$Snake$update = F2(
+	function (msg, game) {
+		var _p2 = game;
+		if (_p2.ctor === 'NewGame') {
+			var _p3 = msg;
+			if ((_p3.ctor === 'KeyPress') && (_p3._0 === 32)) {
+				return {
+					ctor: '_Tuple2',
+					_0: A3(_user$project$Snake$InGame, _user$project$Snake$initSnake, _elm_lang$core$Maybe$Nothing, 0),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			} else {
+				return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
+			}
+		} else {
+			return {
+				ctor: '_Tuple2',
+				_0: A3(_user$project$Snake$InGame, _user$project$Snake$initSnake, _elm_lang$core$Maybe$Nothing, 0),
+				_1: _elm_lang$core$Platform_Cmd$none
+			};
+		}
+	});
+var _user$project$Snake$Down = {ctor: 'Down'};
+var _user$project$Snake$Up = {ctor: 'Up'};
+var _user$project$Snake$Spawn = function (a) {
+	return {ctor: 'Spawn', _0: a};
+};
+var _user$project$Snake$KeyPress = function (a) {
+	return {ctor: 'KeyPress', _0: a};
+};
+var _user$project$Snake$Tick = function (a) {
+	return {ctor: 'Tick', _0: a};
+};
+var _user$project$Snake$subscriptions = function (game) {
+	var _p4 = game;
+	if (_p4.ctor === 'InGame') {
+		return _elm_lang$keyboard$Keyboard$presses(_user$project$Snake$KeyPress);
+	} else {
+		return _elm_lang$core$Platform_Sub$batch(
+			{
+				ctor: '::',
+				_0: _elm_lang$keyboard$Keyboard$downs(_user$project$Snake$KeyPress),
+				_1: {
+					ctor: '::',
+					_0: A2(
+						_elm_lang$core$Time$every,
+						_elm_lang$core$Time$inMilliseconds(50),
+						_user$project$Snake$Tick),
+					_1: {ctor: '[]'}
+				}
+			});
+	}
+};
+var _user$project$Snake$main = _elm_lang$html$Html$program(
+	{init: _user$project$Snake$init, view: _user$project$Snake$view, update: _user$project$Snake$update, subscriptions: _user$project$Snake$subscriptions})();
