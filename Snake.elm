@@ -4,8 +4,6 @@ module Snake exposing (..)
 import Html exposing (..)
 import Html.Events exposing (..)
 import Element exposing (..)
--- html style and helper functions for HTML attributes
---import Html.App
 -- access of direction and key codes,
 -- let application listen keyboard event
 import Keyboard
@@ -13,17 +11,18 @@ import Keyboard
 import Window
 -- generate random place to put the food
 import Random
+-- A library for styling and displaying text.
 import Text
 import Time exposing (Time)
 import Color exposing (..)
 import Collage exposing (..)
 import Html.Attributes exposing (style)
 -- Animation elements
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
+--import Svg exposing (..)
+--import Svg.Attributes exposing (..)
 import Char
 
-(width, height) = (500, 500)
+(width, height) = (550, 550)
 
 main =
   Html.program
@@ -33,23 +32,12 @@ main =
     , subscriptions = subscriptions
     }
 
--- model
---type alias Game =
-  --{ snake : Snake
-  --, state : GameState
-  --, food : Block
-  --, eaten : Bool
-  --}
-
 type Game
-  = NewGame
-  | InGame Snake Food Score
+    = NewGame
+    | InGame Snake Food Score
+    | Lose Score
 
 type alias Score = Int
-
---type GameState = NewGame
-               --| InGame
-               --| Lose
 
 type Direction = Up
                | Down
@@ -74,22 +62,15 @@ initSnake =
   , direction = Left
   }
 
---initGame =
-  --{ snake = initSnake
-  --, state = NewGame
-  --, food = Nothing
-  --, eaten = False
-  --}
-
 init : (Game, Cmd Msg)
 init = (NewGame, Cmd.none)
-
 
 -- MESSAGES
 type Msg
   = Tick Time
   | KeyPress Keyboard.KeyCode
-  | Spawn (Float, Position)
+--  | Spawn (Float, Position)
+
 
 
 -- UPDATE
@@ -101,14 +82,25 @@ update msg game =
         -- space
         KeyPress 32 ->
           (InGame initSnake Nothing 0, Cmd.none)
-
         _ ->
           (game, Cmd.none)
-    InGame snake food score->
-      (InGame initSnake Nothing 0, Cmd.none)
 
-    --Lose ->
-      --(NewGame initSnake Nothing False 0, Cmd.none)
+    InGame snake food score ->
+      case msg of
+        -- shift
+        KeyPress 16 ->
+          (Lose score, Cmd.none)
+        _ ->
+          (InGame initSnake Nothing 0, Cmd.none)
+
+    Lose score ->
+      case msg of
+        -- space
+        KeyPress 32 ->
+          (NewGame, Cmd.none)
+        _ ->
+          (game, Cmd.none)
+
 
 txt : String -> Form
 txt msg =
@@ -117,7 +109,7 @@ txt msg =
   |> Text.color white
   |> Text.monospace
   |> Element.centered
-  |> Collage.toForm 
+  |> Collage.toForm
 
 -- VIEW
 view : Game -> Html Msg
@@ -128,19 +120,22 @@ view game =
           NewGame ->
             [txt "press SPACE to start"]
           InGame snake food score->
-            [txt "You already enter the game !!!"]
+            [txt "You already enter the game !!!, press SHIFT to end the game !!!"]
+
+          Lose score ->
+            [txt "Sorry, You lose the game, press SPACE to creat a new game"]
   in collage width height (background::content)
     |> Element.toHtml
 
 
 -- SUBSCRIPTIONS
 subscriptions : Game -> Sub Msg
-subscriptions  game =
+subscriptions game =
   case game of
     InGame snake food score->
-      Keyboard.presses KeyPress
-    _ ->
       Sub.batch
         [ Keyboard.downs KeyPress
-        , Time.every (Time.inMilliseconds 50) Tick
+        , Time.every (Time.inMilliseconds 60) Tick
         ]
+    _ ->
+      Keyboard.presses KeyPress
