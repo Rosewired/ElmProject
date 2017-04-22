@@ -80,7 +80,7 @@ update msg game =
     NewGame ->
       case msg of
         -- space
-        KeyPress 32 ->
+        KeyPress 0 ->
           (InGame initSnake Nothing 0, Cmd.none)
         _ ->
           (game, Cmd.none)
@@ -96,7 +96,7 @@ update msg game =
     Lose score ->
       case msg of
         -- space
-        KeyPress 32 ->
+        KeyPress 0 ->
           (NewGame, Cmd.none)
         _ ->
           (game, Cmd.none)
@@ -118,12 +118,11 @@ view game =
       content =
         case game of
           NewGame ->
-            [txt "press SPACE to start"]
+            [txt "press SPACE to start!"]
           InGame snake food score->
-            [txt "You already enter the game !!!, press SHIFT to end the game !!!"]
-
+            [txt "You already entered the game !!!, press SHIFT to end the game !!!"]
           Lose score ->
-            [txt "Sorry, You lose the game, press SPACE to creat a new game"]
+            [txt "Sorry, you lose the game, press SPACE to create a new game"]
   in collage width height (background::content)
     |> Element.toHtml
 

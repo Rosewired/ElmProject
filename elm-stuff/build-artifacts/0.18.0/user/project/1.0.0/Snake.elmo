@@ -17,19 +17,19 @@ var _user$project$Snake$view = function (game) {
 			case 'NewGame':
 				return {
 					ctor: '::',
-					_0: _user$project$Snake$txt('press SPACE to start'),
+					_0: _user$project$Snake$txt('press SPACE to start!'),
 					_1: {ctor: '[]'}
 				};
 			case 'InGame':
 				return {
 					ctor: '::',
-					_0: _user$project$Snake$txt('You already enter the game !!!, press SHIFT to end the game !!!'),
+					_0: _user$project$Snake$txt('You already entered the game !!!, press SHIFT to end the game !!!'),
 					_1: {ctor: '[]'}
 				};
 			default:
 				return {
 					ctor: '::',
-					_0: _user$project$Snake$txt('Sorry, You lose the game, press SPACE to creat a new game'),
+					_0: _user$project$Snake$txt('Sorry, you lose the game, press SPACE to create a new game'),
 					_1: {ctor: '[]'}
 				};
 		}
@@ -82,7 +82,7 @@ var _user$project$Snake$update = F2(
 		switch (_p2.ctor) {
 			case 'NewGame':
 				var _p3 = msg;
-				if ((_p3.ctor === 'KeyPress') && (_p3._0 === 32)) {
+				if ((_p3.ctor === 'KeyPress') && (_p3._0 === 0)) {
 					return {
 						ctor: '_Tuple2',
 						_0: A3(_user$project$Snake$InGame, _user$project$Snake$initSnake, _elm_lang$core$Maybe$Nothing, 0),
@@ -108,7 +108,7 @@ var _user$project$Snake$update = F2(
 				}
 			default:
 				var _p5 = msg;
-				if ((_p5.ctor === 'KeyPress') && (_p5._0 === 32)) {
+				if ((_p5.ctor === 'KeyPress') && (_p5._0 === 0)) {
 					return {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _elm_lang$core$Platform_Cmd$none};
 				} else {
 					return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
