@@ -10,7 +10,7 @@ import Keyboard
 -- allow us to create a grid to run the game
 import Window
 -- generate random place to put the food
-import Random
+import Random exposing (..)
 -- A library for styling and displaying text.
 import Text
 import Time exposing (Time)
@@ -37,7 +37,7 @@ main =
 type Game
     = NewGame
     | InGame Snake Food Score
-    | Lose Score
+    | Lose Snake Food Score
 
 type alias Score = Int
 
@@ -46,9 +46,10 @@ type Direction = Up
                | Left
                | Right
 
-type alias Block = { x : Float
-                , y : Float
-                }
+type alias Block = { x : Float, y : Float}
+
+pos : Float -> Float -> Block
+pos = (,)
 
 type alias Snake =
   { head : Block
@@ -73,9 +74,11 @@ init = (NewGame, Cmd.none)
 type Msg
   = Tick Time
   | KeyPress Keyboard.KeyCode
---  | Spawn (Float, Position)
+  | Spawn (Float, Block)
 
-
+randPos = Random.pair (Random.float 0 1) (Random.float 0 1)
+generator: Random.Generator (Float, Block)
+generator = Random.pair (Random.float 0 1) randPos
 
 -- UPDATE
 update : Msg -> Game -> (Game, Cmd Msg)
@@ -91,15 +94,49 @@ update msg game =
 
     InGame snake food score ->
       case msg of
---        Tick time ->
---            updateGame game
-        -- shift
-        KeyPress 16 ->
-          (Lose score, Cmd.none)
-        _ ->
-          (InGame initSnake Nothing 0, Cmd.none)
+        KeyPress key ->
+          let newDirection = 
+            if Char.fromCode key == 'w' && not (snake.direction == Down) then Up
+            else if Char.fromCode key == 's' && not (snake.direction == Up) then Down
+            else if Char.fromCode key == 'a' && not (snake.direction == Right) then Left
+            else if Char.fromCode key == 'd' && not (snake.direction == Left) then Right
+            else snake.direction
+              newSnake = { snake | direction=newDirection }
+          in (InGame newSnake food score, Cmd.none)
 
-    Lose score ->
+        Spawn (chance, (randX,randY)) ->
+          if chance <= 0.1 then
+            let newFood = spawnFood randX randY
+            in (InGame snake newFood score, Cmd.none)
+          else (game, Cmd.none)
+
+        Tick _ ->
+          let newHead = 
+            if snake.direction == Up then pos snake.head.x (snake.head.y+blockSize)
+            else if snake.direction == Down then pos snake.head.x (snake.head.y-blockSize)
+            else if snake.direction == Left then pos (snake.head.x-blockSize) snake.head.y
+            else pos (snake.head.x+blockSize) snake.head.y
+              ateFood = 
+                case food of 
+                  Just block -> overlap newHead block
+                  Nothing -> False
+              newTail =
+                if ateFood then snake.head::snake.tail
+                else snake.head::(List.take (List.length snake.tail-1) snake.tail)
+              newSnake = {snake | head=newHead, tail=newTail}
+              (newFood, newScore) =
+                if ateFood then (Nothing, score+1)
+                else (food, score)
+              gameEnd = gameOver newHead newTail
+            in if gameEnd then
+                (Lose snake food score, Cmd.none)
+               else
+                if newFood == Nothing then
+                  (InGame newSnake newFood newScore, Random.generate Spawn generator)
+                else
+                  (InGame newSnake newFood newScore, Cmd.none)
+
+    Lose snake food score ->
       case msg of
         -- space
         KeyPress 32 ->
@@ -182,7 +219,7 @@ view game =
                   Nothing -> showscore::head::tail
                   Just block ->
                     (circle foodRadius |> filled red |> move (block.x,block.y))::showscore::head::tail
-          Lose score ->
+          Lose snake food score ->
             [txt "Sorry, you lose the game, press SPACE to create a new game"]
   in collage width height (background::content)
     |> Element.toHtml
@@ -199,3 +236,23 @@ subscriptions game =
         ]
     _ ->
       Keyboard.presses KeyPress
+
+gameOver: Block -> List Block -> Bool
+gameOver newHead newTail =
+  List.any ((==) newHead) newTail
+  || Tuple.first newHead > (width / 2)
+  || Tuple.second newHead > (width / 2)
+  || Tuple.first newHead < (-width / 2)
+  || Tuple.second newHead < (-width / 2)
+
+spawnFood: Float -> Float -> Food
+spawnFood randWidth randHeight =
+  let x = randWidth * width - width / 2
+      y = randHeight * height - height /2
+  in pos x y |> Just
+
+overlap: Block -> Block -> Bool
+overlap(snakeX, snakeY) (foodX, foodY) =
+  let (x,y) = (foodX-snakeX, foodY-snakeY)
+      distance = sqrt(x*x+y*y)
+  in distance <= (foodRadius *2)
