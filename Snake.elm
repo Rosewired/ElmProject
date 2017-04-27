@@ -1,4 +1,4 @@
--- Rosewired@mac.com
+
 module Snake exposing (..)
 -- the Elm architecture
 import Html exposing (..)
@@ -22,6 +22,8 @@ import Html.Attributes exposing (style)
 --import Svg.Attributes exposing (..)
 import Char
 
+blockSize = 15
+foodRadius = 7.5
 (width, height) = (550, 550)
 
 main =
@@ -44,7 +46,9 @@ type Direction = Up
                | Left
                | Right
 
-type alias Block = (Float, Float)
+type alias Block = { x : Float
+                , y : Float
+                }
 
 type alias Snake =
   { head : Block
@@ -57,8 +61,8 @@ type alias Food = Maybe Block
 -- define the initial state
 initSnake : Snake
 initSnake =
-  { head = (28, 28)
-  , tail = [(29, 28), (30, 28)]
+  { head = Block 28 28
+  , tail = [ Block 43 28, Block 58 28, Block 73 28]
   , direction = Left
   }
 
@@ -80,13 +84,15 @@ update msg game =
     NewGame ->
       case msg of
         -- space
-        KeyPress 0 ->
+        KeyPress 32 ->
           (InGame initSnake Nothing 0, Cmd.none)
         _ ->
           (game, Cmd.none)
 
     InGame snake food score ->
       case msg of
+--        Tick time ->
+--            updateGame game
         -- shift
         KeyPress 16 ->
           (Lose score, Cmd.none)
@@ -96,10 +102,54 @@ update msg game =
     Lose score ->
       case msg of
         -- space
-        KeyPress 0 ->
+        KeyPress 32 ->
           (NewGame, Cmd.none)
         _ ->
           (game, Cmd.none)
+
+{-
+updateGame : Game -> ( Game, Cmd Msg )
+updateGame game =  ( game, Cmd.none )
+--        |> checkIfOutOfBounds
+--        |> checkIfEatenSelf
+--        |> checkIfAteFruit
+          |> updateSnake
+--        |> updateFruit
+
+updateSnake : ( Game, Cmd Msg ) -> ( Game, Cmd Msg )
+updateSnake ( game, cmd ) =
+    let
+        head = game.snake.head
+
+        newHead =
+            case game.snake.direction of
+                Up ->
+                    { head | y = head.y + 1 }
+
+                Down ->
+                    { head | y = head.y - 1 }
+
+                Left ->
+                    { head | x = head.x - 1 }
+
+                Right ->
+                    { head | x = head.x + 1 }
+
+        tailPositions =
+                List.take (List.length game.snake.tail - 1) game.snake.tail
+
+        tailXs =
+            head.x :: List.map .x tailPositions
+
+        tailYs =
+            head.y :: List.map .y tailPositions
+
+        newTail =
+            List.map2 Block tailXs tailYs
+    in
+        ( { game | snake.head = newHead snake.tail = newTail }, cmd )
+
+-}
 
 
 txt : String -> Form
@@ -119,8 +169,19 @@ view game =
         case game of
           NewGame ->
             [txt "press SPACE to start!"]
-          InGame snake food score->
-            [txt "You already entered the game !!!, press SHIFT to end the game !!!"]
+          InGame snake food score ->
+              let head = rect blockSize blockSize
+                      |> filled white
+                      |> move (snake.head.x,snake.head.y)
+                  tail = snake.tail
+                      |> List.map (\block -> rect blockSize blockSize
+                                          |> filled yellow
+                                          |> move (block.x,block.y))
+                  showscore = txt (toString score)
+              in case food of
+                  Nothing -> showscore::head::tail
+                  Just block ->
+                    (circle foodRadius |> filled red |> move (block.x,block.y))::showscore::head::tail
           Lose score ->
             [txt "Sorry, you lose the game, press SPACE to create a new game"]
   in collage width height (background::content)
