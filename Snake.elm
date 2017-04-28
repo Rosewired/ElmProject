@@ -1,3 +1,4 @@
+-- Rosewired@mac.com
 
 module Snake exposing (..)
 -- the Elm architecture
@@ -10,21 +11,18 @@ import Keyboard
 -- allow us to create a grid to run the game
 import Window
 -- generate random place to put the food
-import Random exposing (..)
+import Random
 -- A library for styling and displaying text.
 import Text
 import Time exposing (Time)
 import Color exposing (..)
 import Collage exposing (..)
 import Html.Attributes exposing (style)
--- Animation elements
---import Svg exposing (..)
---import Svg.Attributes exposing (..)
 import Char
 
 blockSize = 15
 foodRadius = 7.5
-(width, height) = (550, 550)
+(width, height) = (500, 500)
 
 main =
   Html.program
@@ -34,26 +32,32 @@ main =
     , subscriptions = subscriptions
     }
 
-type Game
-    = NewGame
-    | InGame Snake Food Score
-    | Lose Snake Food Score
+type alias GameState = { snake : Snake,
+                         food : Food,
+                         score: Score,
+                         isDead : Bool
+                       }
 
 type alias Score = Int
+
+type Game
+    = NewGame
+    | InGame GameState
+    | Lose Score
+
+
 
 type Direction = Up
                | Down
                | Left
                | Right
 
-type alias Block = { x : Float, y : Float}
-
-pos : Float -> Float -> Block
-pos = (,)
+type alias Block = { x : Float
+                   , y : Float
+                   }
 
 type alias Snake =
-  { head : Block
-  , tail : List Block
+  { body : List Block
   , direction : Direction
   }
 
@@ -62,23 +66,29 @@ type alias Food = Maybe Block
 -- define the initial state
 initSnake : Snake
 initSnake =
-  { head = Block 28 28
-  , tail = [ Block 43 28, Block 58 28, Block 73 28]
+  { body = [ Block 0 0, Block blockSize 0, Block (2*blockSize) 0, Block (3*blockSize) 0]
   , direction = Left
   }
+
+initFood : Food
+initFood = Just (Block -100 28)
 
 init : (Game, Cmd Msg)
 init = (NewGame, Cmd.none)
 
+initScore : Score
+initScore = 0
+
+initGameState : GameState
+initGameState = {snake = initSnake,
+                 food = initFood,
+                 score = initScore,
+                 isDead = False}
 -- MESSAGES
 type Msg
   = Tick Time
   | KeyPress Keyboard.KeyCode
-  | Spawn (Float, Block)
 
-randPos = Random.pair (Random.float 0 1) (Random.float 0 1)
-generator: Random.Generator (Float, Block)
-generator = Random.pair (Random.float 0 1) randPos
 
 -- UPDATE
 update : Msg -> Game -> (Game, Cmd Msg)
@@ -88,55 +98,34 @@ update msg game =
       case msg of
         -- space
         KeyPress 32 ->
-          (InGame initSnake Nothing 0, Cmd.none)
+          (InGame initGameState, Cmd.none)
         _ ->
           (game, Cmd.none)
 
-    InGame snake food score ->
+    InGame gameState ->
       case msg of
-        KeyPress key ->
-          let newDirection = 
-            if Char.fromCode key == 'w' && not (snake.direction == Down) then Up
-            else if Char.fromCode key == 's' && not (snake.direction == Up) then Down
-            else if Char.fromCode key == 'a' && not (snake.direction == Right) then Left
-            else if Char.fromCode key == 'd' && not (snake.direction == Left) then Right
-            else snake.direction
-              newSnake = { snake | direction=newDirection }
-          in (InGame newSnake food score, Cmd.none)
+        -- shift
+        KeyPress 16 ->
+          (Lose gameState.score, Cmd.none)
 
-        Spawn (chance, (randX,randY)) ->
-          if chance <= 0.1 then
-            let newFood = spawnFood randX randY
-            in (InGame snake newFood score, Cmd.none)
-          else (game, Cmd.none)
+        KeyPress keyCode ->
+          case gameState of
+            snake ->
+              (InGame (updateDirection keyCode gameState), Cmd.none)
 
-        Tick _ ->
-          let newHead = 
-            if snake.direction == Up then pos snake.head.x (snake.head.y+blockSize)
-            else if snake.direction == Down then pos snake.head.x (snake.head.y-blockSize)
-            else if snake.direction == Left then pos (snake.head.x-blockSize) snake.head.y
-            else pos (snake.head.x+blockSize) snake.head.y
-              ateFood = 
-                case food of 
-                  Just block -> overlap newHead block
-                  Nothing -> False
-              newTail =
-                if ateFood then snake.head::snake.tail
-                else snake.head::(List.take (List.length snake.tail-1) snake.tail)
-              newSnake = {snake | head=newHead, tail=newTail}
-              (newFood, newScore) =
-                if ateFood then (Nothing, score+1)
-                else (food, score)
-              gameEnd = gameOver newHead newTail
-            in if gameEnd then
-                (Lose snake food score, Cmd.none)
-               else
-                if newFood == Nothing then
-                  (InGame newSnake newFood newScore, Random.generate Spawn generator)
-                else
-                  (InGame newSnake newFood newScore, Cmd.none)
+        Tick time ->
+          let newState = updateGame gameState
+          in
+            case gameState.isDead of
+              True ->
+                (Lose gameState.score, Cmd.none)
+              _ ->
+                (InGame newState, Cmd.none)
 
-    Lose snake food score ->
+--        _ ->
+--          (InGame initGameState, Cmd.none)
+
+    Lose score ->
       case msg of
         -- space
         KeyPress 32 ->
@@ -144,49 +133,89 @@ update msg game =
         _ ->
           (game, Cmd.none)
 
-{-
-updateGame : Game -> ( Game, Cmd Msg )
-updateGame game =  ( game, Cmd.none )
---        |> checkIfOutOfBounds
---        |> checkIfEatenSelf
+getSnakeHead : Snake -> Block
+getSnakeHead snake =
+  Maybe.withDefault (Block 0 0)
+    (List.head snake.body)
+
+updateDirection : Keyboard.KeyCode -> GameState -> GameState
+updateDirection keyCode gameState =
+      let
+        newSnake = getNewDirection keyCode gameState.snake
+      in
+        { gameState | snake = newSnake}
+
+
+getNewDirection : Keyboard.KeyCode -> Snake -> Snake
+getNewDirection key snake =
+    -- left arrow
+    if (key == 37 && snake.direction /= Right )then
+      {snake | direction = Left}
+    -- right arrow
+    else if key == 39 && snake.direction /= Left then
+      {snake | direction = Right}
+    -- up arrow
+    else if key == 38 && snake.direction /= Down then
+      {snake | direction = Up}
+    -- down arrow
+    else if key == 40 && snake.direction /= Up then
+      {snake | direction = Down}
+    else
+      let
+      direction = snake.direction
+        in
+        {snake | direction = direction}
+
+updateGame : GameState -> GameState
+updateGame  gameState = gameState
+          |> checkIfOutOfBounds
+--          |> checkIfEatenSelf
 --        |> checkIfAteFruit
           |> updateSnake
 --        |> updateFruit
 
-updateSnake : ( Game, Cmd Msg ) -> ( Game, Cmd Msg )
-updateSnake ( game, cmd ) =
+checkIfOutOfBounds : GameState -> GameState
+checkIfOutOfBounds gameState =
+  let snakeHead = getSnakeHead gameState.snake
+      isDead = ((snakeHead.x <= -width/2 && gameState.snake.direction == Left)
+      || (snakeHead.y >= height/2 && gameState.snake.direction == Up)
+      || (snakeHead.x >= width/2 && gameState.snake.direction == Right)
+      || (snakeHead.y <= -height/2 && gameState.snake.direction == Down))
+  in
+    {gameState | isDead = isDead }
+
+
+
+
+updateSnake : GameState -> GameState
+updateSnake gameState =
     let
-        head = game.snake.head
+        snakeHead = getSnakeHead gameState.snake
 
         newHead =
-            case game.snake.direction of
+            case gameState.snake.direction of
                 Up ->
-                    { head | y = head.y + 1 }
+                    { snakeHead | y = snakeHead.y + blockSize }
 
                 Down ->
-                    { head | y = head.y - 1 }
+                    { snakeHead | y = snakeHead.y - blockSize }
 
                 Left ->
-                    { head | x = head.x - 1 }
+                    { snakeHead | x = snakeHead.x - blockSize }
 
                 Right ->
-                    { head | x = head.x + 1 }
+                    { snakeHead | x = snakeHead.x + blockSize }
 
-        tailPositions =
-                List.take (List.length game.snake.tail - 1) game.snake.tail
+        newTail = gameState.snake.body
+                |> List.reverse
+                |> List.drop 1
+                |> List.reverse
 
-        tailXs =
-            head.x :: List.map .x tailPositions
+        newBody = newHead :: newTail
+        snake = gameState.snake
 
-        tailYs =
-            head.y :: List.map .y tailPositions
-
-        newTail =
-            List.map2 Block tailXs tailYs
     in
-        ( { game | snake.head = newHead snake.tail = newTail }, cmd )
-
--}
+      { gameState | snake = { snake | body = newBody }}
 
 
 txt : String -> Form
@@ -206,20 +235,25 @@ view game =
         case game of
           NewGame ->
             [txt "press SPACE to start!"]
-          InGame snake food score ->
-              let head = rect blockSize blockSize
+          InGame gameState ->
+              let snakeHead = getSnakeHead gameState.snake
+                  head = rect blockSize blockSize
                       |> filled white
-                      |> move (snake.head.x,snake.head.y)
-                  tail = snake.tail
+                      |> move (snakeHead.x,snakeHead.y)
+                  tail = gameState.snake.body
+                      |> List.drop 1
                       |> List.map (\block -> rect blockSize blockSize
                                           |> filled yellow
                                           |> move (block.x,block.y))
-                  showscore = txt (toString score)
-              in case food of
+
+                  showscore = txt (toString gameState.score)
+              in case gameState.food of
                   Nothing -> showscore::head::tail
                   Just block ->
-                    (circle foodRadius |> filled red |> move (block.x,block.y))::showscore::head::tail
-          Lose snake food score ->
+                    (circle foodRadius
+                    |> filled red
+                    |> move (block.x,block.y))::showscore::head::tail
+          Lose score ->
             [txt "Sorry, you lose the game, press SPACE to create a new game"]
   in collage width height (background::content)
     |> Element.toHtml
@@ -229,30 +263,10 @@ view game =
 subscriptions : Game -> Sub Msg
 subscriptions game =
   case game of
-    InGame snake food score->
+    InGame gameState ->
       Sub.batch
         [ Keyboard.downs KeyPress
         , Time.every (Time.inMilliseconds 60) Tick
         ]
     _ ->
       Keyboard.presses KeyPress
-
-gameOver: Block -> List Block -> Bool
-gameOver newHead newTail =
-  List.any ((==) newHead) newTail
-  || Tuple.first newHead > (width / 2)
-  || Tuple.second newHead > (width / 2)
-  || Tuple.first newHead < (-width / 2)
-  || Tuple.second newHead < (-width / 2)
-
-spawnFood: Float -> Float -> Food
-spawnFood randWidth randHeight =
-  let x = randWidth * width - width / 2
-      y = randHeight * height - height /2
-  in pos x y |> Just
-
-overlap: Block -> Block -> Bool
-overlap(snakeX, snakeY) (foodX, foodY) =
-  let (x,y) = (foodX-snakeX, foodY-snakeY)
-      distance = sqrt(x*x+y*y)
-  in distance <= (foodRadius *2)
