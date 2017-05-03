@@ -12344,10 +12344,7 @@ var _user$project$Snake$view = function (game) {
 			case 'InGame':
 				var _p6 = _p3._0;
 				var showscore = _user$project$Snake$txt(
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						'\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nScore = ',
-						_elm_lang$core$Basics$toString(_p6.score)));
+					_elm_lang$core$Basics$toString(_p6.score));
 				var tail = A2(
 					_elm_lang$core$List$map,
 					function (block) {
@@ -12396,12 +12393,13 @@ var _user$project$Snake$view = function (game) {
 			default:
 				return {
 					ctor: '::',
-					_0: _user$project$Snake$txt(
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							'Sorry, you lose the game, press SPACE to create a new game\nFinal Score = ',
-							_elm_lang$core$Basics$toString(_p3._0))),
-					_1: {ctor: '[]'}
+					_0: _user$project$Snake$txt('Sorry, you lose the game, press SPACE to create a new game'),
+					_1: {
+						ctor: '::',
+						_0: _user$project$Snake$txt(
+							_elm_lang$core$Basics$toString(_p3._0)),
+						_1: {ctor: '[]'}
+					}
 				};
 		}
 	}();
@@ -12552,14 +12550,6 @@ var _user$project$Snake$updateGame = function (gameState) {
 			_user$project$Snake$checkIfAteFood(
 				_user$project$Snake$chekIfDead(gameState))));
 };
-var _user$project$Snake$InitialSeed = function (a) {
-	return {ctor: 'InitialSeed', _0: a};
-};
-var _user$project$Snake$generateInitialSeed = A2(
-	_elm_lang$core$Random$generate,
-	_user$project$Snake$InitialSeed,
-	A2(_elm_lang$core$Random$int, _elm_lang$core$Random$minInt, _elm_lang$core$Random$maxInt));
-var _user$project$Snake$init = {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _user$project$Snake$generateInitialSeed};
 var _user$project$Snake$update = F2(
 	function (msg, game) {
 		var _p10 = game;
@@ -12570,7 +12560,7 @@ var _user$project$Snake$update = F2(
 					return {
 						ctor: '_Tuple2',
 						_0: _user$project$Snake$InGame(_user$project$Snake$initGameState),
-						_1: _user$project$Snake$generateInitialSeed
+						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				} else {
 					return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
@@ -12632,6 +12622,14 @@ var _user$project$Snake$update = F2(
 				}
 		}
 	});
+var _user$project$Snake$InitialSeed = function (a) {
+	return {ctor: 'InitialSeed', _0: a};
+};
+var _user$project$Snake$generateInitialSeed = A2(
+	_elm_lang$core$Random$generate,
+	_user$project$Snake$InitialSeed,
+	A2(_elm_lang$core$Random$int, _elm_lang$core$Random$minInt, _elm_lang$core$Random$maxInt));
+var _user$project$Snake$init = {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _user$project$Snake$generateInitialSeed};
 var _user$project$Snake$KeyPress = function (a) {
 	return {ctor: 'KeyPress', _0: a};
 };

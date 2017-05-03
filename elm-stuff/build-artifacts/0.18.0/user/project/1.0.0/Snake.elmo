@@ -7,15 +7,28 @@ var _user$project$Snake$txt = function (msg) {
 					_elm_lang$core$Color$white,
 					_evancz$elm_graphics$Text$fromString(msg)))));
 };
+var _user$project$Snake$samePosition = F2(
+	function (blocka, blockb) {
+		return _elm_lang$core$Native_Utils.eq(blocka.x, blockb.x) && _elm_lang$core$Native_Utils.eq(blocka.y, blockb.y);
+	});
 var _user$project$Snake$initScore = 0;
 var _user$project$Snake$_p0 = {ctor: '_Tuple2', _0: 500, _1: 500};
 var _user$project$Snake$width = _user$project$Snake$_p0._0;
 var _user$project$Snake$height = _user$project$Snake$_p0._1;
+var _user$project$Snake$halfWidth = _user$project$Snake$width / 2;
+var _user$project$Snake$halfHeight = _user$project$Snake$height / 2;
 var _user$project$Snake$foodRadius = 7.5;
+var _user$project$Snake$overlap = F2(
+	function (snakeHead, food) {
+		var dis2 = snakeHead.y - food.y;
+		var dis1 = snakeHead.x - food.x;
+		var distance = _elm_lang$core$Basics$sqrt((dis1 * dis1) + (dis2 * dis2));
+		return _elm_lang$core$Native_Utils.cmp(distance, _user$project$Snake$foodRadius * 2) < 1;
+	});
 var _user$project$Snake$blockSize = 15;
-var _user$project$Snake$GameState = F4(
-	function (a, b, c, d) {
-		return {snake: a, food: b, score: c, isDead: d};
+var _user$project$Snake$GameState = F6(
+	function (a, b, c, d, e, f) {
+		return {snake: a, food: b, score: c, isDead: d, isEaten: e, seed: f};
 	});
 var _user$project$Snake$Block = F2(
 	function (a, b) {
@@ -29,17 +42,32 @@ var _user$project$Snake$getSnakeHead = function (snake) {
 		A2(_user$project$Snake$Block, 0, 0),
 		_elm_lang$core$List$head(snake.body));
 };
+var _user$project$Snake$checkIfAteFood = function (gameState) {
+	var snakeHead = _user$project$Snake$getSnakeHead(gameState.snake);
+	var _p1 = gameState.food;
+	if (_p1.ctor === 'Nothing') {
+		return _elm_lang$core$Native_Utils.update(
+			gameState,
+			{isEaten: false});
+	} else {
+		return _elm_lang$core$Native_Utils.update(
+			gameState,
+			{
+				isEaten: A2(_user$project$Snake$overlap, snakeHead, _p1._0)
+			});
+	}
+};
 var _user$project$Snake$updateSnake = function (gameState) {
 	var snake = gameState.snake;
-	var newTail = _elm_lang$core$List$reverse(
+	var newTail = gameState.isEaten ? gameState.snake.body : _elm_lang$core$List$reverse(
 		A2(
 			_elm_lang$core$List$drop,
 			1,
 			_elm_lang$core$List$reverse(gameState.snake.body)));
 	var snakeHead = _user$project$Snake$getSnakeHead(gameState.snake);
 	var newHead = function () {
-		var _p1 = gameState.snake.direction;
-		switch (_p1.ctor) {
+		var _p2 = gameState.snake.direction;
+		switch (_p2.ctor) {
 			case 'Up':
 				return _elm_lang$core$Native_Utils.update(
 					snakeHead,
@@ -69,8 +97,8 @@ var _user$project$Snake$updateSnake = function (gameState) {
 };
 var _user$project$Snake$view = function (game) {
 	var content = function () {
-		var _p2 = game;
-		switch (_p2.ctor) {
+		var _p3 = game;
+		switch (_p3.ctor) {
 			case 'NewGame':
 				return {
 					ctor: '::',
@@ -78,9 +106,12 @@ var _user$project$Snake$view = function (game) {
 					_1: {ctor: '[]'}
 				};
 			case 'InGame':
-				var _p5 = _p2._0;
+				var _p6 = _p3._0;
 				var showscore = _user$project$Snake$txt(
-					_elm_lang$core$Basics$toString(_p5.score));
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						'\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nScore = ',
+						_elm_lang$core$Basics$toString(_p6.score)));
 				var tail = A2(
 					_elm_lang$core$List$map,
 					function (block) {
@@ -92,8 +123,8 @@ var _user$project$Snake$view = function (game) {
 								_elm_lang$core$Color$yellow,
 								A2(_evancz$elm_graphics$Collage$rect, _user$project$Snake$blockSize, _user$project$Snake$blockSize)));
 					},
-					A2(_elm_lang$core$List$drop, 1, _p5.snake.body));
-				var snakeHead = _user$project$Snake$getSnakeHead(_p5.snake);
+					A2(_elm_lang$core$List$drop, 1, _p6.snake.body));
+				var snakeHead = _user$project$Snake$getSnakeHead(_p6.snake);
 				var head = A2(
 					_evancz$elm_graphics$Collage$move,
 					{ctor: '_Tuple2', _0: snakeHead.x, _1: snakeHead.y},
@@ -101,20 +132,20 @@ var _user$project$Snake$view = function (game) {
 						_evancz$elm_graphics$Collage$filled,
 						_elm_lang$core$Color$white,
 						A2(_evancz$elm_graphics$Collage$rect, _user$project$Snake$blockSize, _user$project$Snake$blockSize)));
-				var _p3 = _p5.food;
-				if (_p3.ctor === 'Nothing') {
+				var _p4 = _p6.food;
+				if (_p4.ctor === 'Nothing') {
 					return {
 						ctor: '::',
 						_0: showscore,
 						_1: {ctor: '::', _0: head, _1: tail}
 					};
 				} else {
-					var _p4 = _p3._0;
+					var _p5 = _p4._0;
 					return {
 						ctor: '::',
 						_0: A2(
 							_evancz$elm_graphics$Collage$move,
-							{ctor: '_Tuple2', _0: _p4.x, _1: _p4.y},
+							{ctor: '_Tuple2', _0: _p5.x, _1: _p5.y},
 							A2(
 								_evancz$elm_graphics$Collage$filled,
 								_elm_lang$core$Color$red,
@@ -129,7 +160,11 @@ var _user$project$Snake$view = function (game) {
 			default:
 				return {
 					ctor: '::',
-					_0: _user$project$Snake$txt('Sorry, you lose the game, press SPACE to create a new game'),
+					_0: _user$project$Snake$txt(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'Sorry, you lose the game, press SPACE to create a new game\nFinal Score = ',
+							_elm_lang$core$Basics$toString(_p3._0))),
 					_1: {ctor: '[]'}
 				};
 		}
@@ -148,6 +183,41 @@ var _user$project$Snake$view = function (game) {
 			_user$project$Snake$height,
 			{ctor: '::', _0: background, _1: content}));
 };
+var _user$project$Snake$toBlock = F2(
+	function (f1, f2) {
+		return A2(_user$project$Snake$Block, f1, f2);
+	});
+var _user$project$Snake$updateFruit = function (gameState) {
+	var _p7 = gameState.food;
+	if (_p7.ctor === 'Nothing') {
+		var newScore = gameState.score + 1;
+		var food = gameState.food;
+		var _p8 = A2(
+			_elm_lang$core$Random$step,
+			A2(_elm_lang$core$Random$float, (0 - _user$project$Snake$halfHeight) + _user$project$Snake$foodRadius, _user$project$Snake$halfHeight - _user$project$Snake$foodRadius),
+			gameState.seed);
+		var randomY = _p8._0;
+		var newSeed2 = _p8._1;
+		var _p9 = A2(
+			_elm_lang$core$Random$step,
+			A2(_elm_lang$core$Random$float, (0 - _user$project$Snake$halfWidth) + _user$project$Snake$foodRadius, _user$project$Snake$halfWidth - _user$project$Snake$foodRadius),
+			gameState.seed);
+		var randomX = _p9._0;
+		var newSeed1 = _p9._1;
+		var newFood = A2(_user$project$Snake$toBlock, randomX, randomY);
+		return _elm_lang$core$Native_Utils.update(
+			gameState,
+			{
+				seed: newSeed2,
+				food: _elm_lang$core$Maybe$Just(newFood),
+				score: newScore
+			});
+	} else {
+		return _elm_lang$core$Native_Utils.eq(gameState.isEaten, true) ? _elm_lang$core$Native_Utils.update(
+			gameState,
+			{food: _elm_lang$core$Maybe$Nothing}) : gameState;
+	}
+};
 var _user$project$Snake$Snake = F2(
 	function (a, b) {
 		return {body: a, direction: b};
@@ -159,7 +229,6 @@ var _user$project$Snake$InGame = function (a) {
 	return {ctor: 'InGame', _0: a};
 };
 var _user$project$Snake$NewGame = {ctor: 'NewGame'};
-var _user$project$Snake$init = {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _elm_lang$core$Platform_Cmd$none};
 var _user$project$Snake$Right = {ctor: 'Right'};
 var _user$project$Snake$Left = {ctor: 'Left'};
 var _user$project$Snake$initSnake = {
@@ -182,7 +251,14 @@ var _user$project$Snake$initSnake = {
 	},
 	direction: _user$project$Snake$Left
 };
-var _user$project$Snake$initGameState = {snake: _user$project$Snake$initSnake, food: _user$project$Snake$initFood, score: _user$project$Snake$initScore, isDead: false};
+var _user$project$Snake$initGameState = {
+	snake: _user$project$Snake$initSnake,
+	food: _user$project$Snake$initFood,
+	score: _user$project$Snake$initScore,
+	isDead: false,
+	isEaten: false,
+	seed: _elm_lang$core$Random$initialSeed(0)
+};
 var _user$project$Snake$Down = {ctor: 'Down'};
 var _user$project$Snake$Up = {ctor: 'Up'};
 var _user$project$Snake$getNewDirection = F2(
@@ -223,71 +299,97 @@ var _user$project$Snake$updateDirection = F2(
 			gameState,
 			{snake: newSnake});
 	});
-var _user$project$Snake$checkIfOutOfBounds = function (gameState) {
+var _user$project$Snake$chekIfDead = function (gameState) {
+	var snakeTail = A2(_elm_lang$core$List$drop, 1, gameState.snake.body);
 	var snakeHead = _user$project$Snake$getSnakeHead(gameState.snake);
-	var isDead = ((_elm_lang$core$Native_Utils.cmp(snakeHead.x, (0 - _user$project$Snake$width) / 2) < 1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Left)) || (((_elm_lang$core$Native_Utils.cmp(snakeHead.y, _user$project$Snake$height / 2) > -1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Up)) || (((_elm_lang$core$Native_Utils.cmp(snakeHead.x, _user$project$Snake$width / 2) > -1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Right)) || ((_elm_lang$core$Native_Utils.cmp(snakeHead.y, (0 - _user$project$Snake$height) / 2) < 1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Down))));
+	var isDead = (((_elm_lang$core$Native_Utils.cmp(snakeHead.x, (0 - _user$project$Snake$halfWidth) + _user$project$Snake$blockSize) < 1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Left)) || (((_elm_lang$core$Native_Utils.cmp(snakeHead.y, _user$project$Snake$halfHeight - _user$project$Snake$blockSize) > -1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Up)) || (((_elm_lang$core$Native_Utils.cmp(snakeHead.x, _user$project$Snake$halfWidth - _user$project$Snake$blockSize) > -1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Right)) || ((_elm_lang$core$Native_Utils.cmp(snakeHead.y, (0 - _user$project$Snake$halfHeight) + _user$project$Snake$blockSize) < 1) && _elm_lang$core$Native_Utils.eq(gameState.snake.direction, _user$project$Snake$Down))))) || A2(
+		_elm_lang$core$List$any,
+		_user$project$Snake$samePosition(snakeHead),
+		snakeTail);
 	return _elm_lang$core$Native_Utils.update(
 		gameState,
 		{isDead: isDead});
 };
 var _user$project$Snake$updateGame = function (gameState) {
-	return _user$project$Snake$updateSnake(
-		_user$project$Snake$checkIfOutOfBounds(gameState));
+	return _user$project$Snake$updateFruit(
+		_user$project$Snake$updateSnake(
+			_user$project$Snake$checkIfAteFood(
+				_user$project$Snake$chekIfDead(gameState))));
 };
+var _user$project$Snake$InitialSeed = function (a) {
+	return {ctor: 'InitialSeed', _0: a};
+};
+var _user$project$Snake$generateInitialSeed = A2(
+	_elm_lang$core$Random$generate,
+	_user$project$Snake$InitialSeed,
+	A2(_elm_lang$core$Random$int, _elm_lang$core$Random$minInt, _elm_lang$core$Random$maxInt));
+var _user$project$Snake$init = {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _user$project$Snake$generateInitialSeed};
 var _user$project$Snake$update = F2(
 	function (msg, game) {
-		var _p6 = game;
-		switch (_p6.ctor) {
+		var _p10 = game;
+		switch (_p10.ctor) {
 			case 'NewGame':
-				var _p7 = msg;
-				if ((_p7.ctor === 'KeyPress') && (_p7._0 === 32)) {
+				var _p11 = msg;
+				if ((_p11.ctor === 'KeyPress') && (_p11._0 === 32)) {
 					return {
 						ctor: '_Tuple2',
 						_0: _user$project$Snake$InGame(_user$project$Snake$initGameState),
-						_1: _elm_lang$core$Platform_Cmd$none
+						_1: _user$project$Snake$generateInitialSeed
 					};
 				} else {
 					return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
 				}
 			case 'InGame':
-				var _p11 = _p6._0;
-				var _p8 = msg;
-				if (_p8.ctor === 'KeyPress') {
-					if (_p8._0 === 16) {
-						return {
-							ctor: '_Tuple2',
-							_0: _user$project$Snake$Lose(_p11.score),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						var _p9 = _p11;
+				var _p15 = _p10._0;
+				var _p12 = msg;
+				switch (_p12.ctor) {
+					case 'InitialSeed':
 						return {
 							ctor: '_Tuple2',
 							_0: _user$project$Snake$InGame(
-								A2(_user$project$Snake$updateDirection, _p8._0, _p11)),
+								_elm_lang$core$Native_Utils.update(
+									_p15,
+									{
+										seed: _elm_lang$core$Random$initialSeed(_p12._0)
+									})),
 							_1: _elm_lang$core$Platform_Cmd$none
 						};
-					}
-				} else {
-					var newState = _user$project$Snake$updateGame(_p11);
-					var _p10 = _p11.isDead;
-					if (_p10 === true) {
-						return {
-							ctor: '_Tuple2',
-							_0: _user$project$Snake$Lose(_p11.score),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					} else {
-						return {
-							ctor: '_Tuple2',
-							_0: _user$project$Snake$InGame(newState),
-							_1: _elm_lang$core$Platform_Cmd$none
-						};
-					}
+					case 'KeyPress':
+						if (_p12._0 === 16) {
+							return {
+								ctor: '_Tuple2',
+								_0: _user$project$Snake$Lose(_p15.score),
+								_1: _elm_lang$core$Platform_Cmd$none
+							};
+						} else {
+							var _p13 = _p15;
+							return {
+								ctor: '_Tuple2',
+								_0: _user$project$Snake$InGame(
+									A2(_user$project$Snake$updateDirection, _p12._0, _p15)),
+								_1: _elm_lang$core$Platform_Cmd$none
+							};
+						}
+					default:
+						var newState = _user$project$Snake$updateGame(_p15);
+						var _p14 = _p15.isDead;
+						if (_p14 === true) {
+							return {
+								ctor: '_Tuple2',
+								_0: _user$project$Snake$Lose(_p15.score),
+								_1: _elm_lang$core$Platform_Cmd$none
+							};
+						} else {
+							return {
+								ctor: '_Tuple2',
+								_0: _user$project$Snake$InGame(newState),
+								_1: _elm_lang$core$Platform_Cmd$none
+							};
+						}
 				}
 			default:
-				var _p12 = msg;
-				if ((_p12.ctor === 'KeyPress') && (_p12._0 === 32)) {
+				var _p16 = msg;
+				if ((_p16.ctor === 'KeyPress') && (_p16._0 === 32)) {
 					return {ctor: '_Tuple2', _0: _user$project$Snake$NewGame, _1: _elm_lang$core$Platform_Cmd$none};
 				} else {
 					return {ctor: '_Tuple2', _0: game, _1: _elm_lang$core$Platform_Cmd$none};
@@ -301,8 +403,8 @@ var _user$project$Snake$Tick = function (a) {
 	return {ctor: 'Tick', _0: a};
 };
 var _user$project$Snake$subscriptions = function (game) {
-	var _p13 = game;
-	if (_p13.ctor === 'InGame') {
+	var _p17 = game;
+	if (_p17.ctor === 'InGame') {
 		return _elm_lang$core$Platform_Sub$batch(
 			{
 				ctor: '::',
@@ -311,7 +413,7 @@ var _user$project$Snake$subscriptions = function (game) {
 					ctor: '::',
 					_0: A2(
 						_elm_lang$core$Time$every,
-						_elm_lang$core$Time$inMilliseconds(60),
+						_elm_lang$core$Time$inMilliseconds(100),
 						_user$project$Snake$Tick),
 					_1: {ctor: '[]'}
 				}
